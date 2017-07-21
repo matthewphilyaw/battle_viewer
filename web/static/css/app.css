@@ -1,0 +1,11 @@
+/* This file is for your main application css. */
+
+.container-fluid,
+.container {
+    min-width: 1170px;
+}
+
+body {
+    background: black;
+    color: white;
+}
