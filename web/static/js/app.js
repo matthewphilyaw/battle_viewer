@@ -23,50 +23,124 @@ import socket from "./socket"
 var canvas = document.getElementById('arena');
 var ctx = canvas.getContext("2d");
 
-function drawBot(ctx, p) {
-  var preLineWidth = ctx.lineWidth;
-  var preStroke = ctx.strokeStyle;
-  ctx.lineWidth = 2;
-  ctx.strokeStyle = 'black';
-  ctx.setLineDash([]);
-  ctx.beginPath();
-  ctx.arc(p.x, p.y, 20, 0, Math.PI * 2, true);
-  ctx.stroke();
+var initData = null;
+var pi = Math.PI;
+var pi2 = pi * 2;
 
-  var preText = ctx.textAlign;
-  var preBase = ctx.textBaseline;
-  ctx.lineWidth = 1;
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.strokeText(p.name, p.x, p.y);
-  ctx.textAlign = preText;
-  ctx.textBaseline = ctx.textBaseline;
-  ctx.lineWidth = preLineWidth;
+function clear(data) {
+    var h = data.height;
+    var w = data.width;
+
+    ctx.fillStyle = data.arenaColor;
+    ctx.fillRect(0,0,w,h);
+
+    ctx.strokeStyle = data.arenaBorderColor;
+
+    ctx.strokeRect(2,2,w-2,h-2);
+
+    ctx.setLineDash([5, 12]);
+
+    ctx.beginPath();
+    ctx.moveTo(5, h/2);
+    ctx.lineTo(w, h/2);
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.moveTo(w/2, 5);
+    ctx.lineTo(w/2, h);
+    ctx.stroke();
+
+    ctx.setLineDash([]);
 }
 
-function initCommand(canvas, ctx, data) {
+function drawHeading(bot) {
+    var heading = bot.heading;
+
+    var x = bot.x;
+    var y = bot.y;
+
+    var cx = (heading.length * Math.cos(heading.angle)) + x;
+    var cy = (heading.length * Math.sin(heading.angle)) + y;
+
+    ctx.beginPath();
+    ctx.strokeStyle = heading.color;
+    ctx.moveTo(x, y);
+    ctx.lineTo(cx, cy);
+    ctx.stroke();
+}
+
+function drawCannon(bot) {
+    var cannon = bot.cannon;
+
+    var x = bot.x;
+    var y = bot.y;
+
+    var cx = (cannon.length * Math.cos(cannon.angle)) + x;
+    var cy = (cannon.length * Math.sin(cannon.angle)) + y;
+
+    ctx.beginPath();
+    ctx.strokeStyle = cannon.color;
+    ctx.moveTo(x, y);
+    ctx.lineTo(cx, cy);
+    ctx.stroke();
+}
+
+function drawRadar(bot) {
+    var radar = bot.radar;
+    var halfArc = radar.arcAngle / 2;
+
+    var x = bot.x;
+    var y = bot.y;
+
+    ctx.beginPath();
+    ctx.strokeStyle = radar.color;
+    ctx.moveTo(x, y);
+    ctx.arc(
+        x,
+        y,
+        radar.radius,
+        radar.angle - halfArc,
+        radar.angle + halfArc
+    );
+    ctx.lineTo(x, y);
+    ctx.stroke();
+}
+
+function drawBot(bot) {
+    var x = bot.x;
+    var y = bot.y;
+
+    ctx.strokeStyle = bot.color;
+    ctx.beginPath();
+    ctx.arc(x, y, bot.radius, 0, pi2);
+    ctx.stroke();
+
+    drawHeading(bot);
+    drawCannon(bot);
+    drawRadar(bot);
+}
+
+function initCommand(canvas, data) {
+    initData = data;
     canvas.height = data.height;
     canvas.width = data.width;
-
-    ctx.fillStyle = "darkGray";
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    clear(initData);
 }
 
-function drawCommand(canvas, ctx, data) {
-    ctx.fillStyle = "drakGray";
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+function drawCommand(canvas, data) {
+    clear(initData);
 
     var bots = data.bots;
     for (var i = 0; i < bots.length; i++) {
-      drawBot(ctx, bots[i]);
+      drawBot(bots[i]);
     }
 }
 
 socket.on("command", data => {
     if (data.method === "init") {
-        initCommand(canvas, ctx, data);
+        initCommand(canvas, data);
     }
     else if (data.method === "draw") {
-        drawCommand(canvas, ctx, data);
+        drawCommand(canvas, data);
     }
 });
